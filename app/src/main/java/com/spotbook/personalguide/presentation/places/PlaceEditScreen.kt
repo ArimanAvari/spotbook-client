@@ -95,13 +95,6 @@ fun PlaceEditScreen(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Комментарий") }
                 )
-                OutlinedTextField(
-                    value = form.photoPath,
-                    onValueChange = viewModel::onPhotoPathChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Путь к фото") },
-                    singleLine = true
-                )
                 OutlinedButton(
                     onClick = { photoPicker.launch("image/*") },
                     modifier = Modifier.fillMaxWidth()
