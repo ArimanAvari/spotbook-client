@@ -4,8 +4,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.spotbook.personalguide.domain.repository.AuthRepository
+import com.spotbook.personalguide.domain.usecase.LoginUseCase
+import com.spotbook.personalguide.domain.usecase.RegisterUseCase
+import kotlinx.coroutines.launch
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(
+    authRepository: AuthRepository
+) : ViewModel() {
+    private val loginUseCase = LoginUseCase(authRepository)
+    private val registerUseCase = RegisterUseCase(authRepository)
+    private val repository = authRepository
+
     var state by mutableStateOf(AuthState())
         private set
 
@@ -21,36 +33,58 @@ class AuthViewModel : ViewModel() {
         state = state.copy(confirmPassword = value, error = null)
     }
 
-    fun login(): Boolean {
-        return when {
+    fun login(onSuccess: () -> Unit) {
+        when {
             state.email.isBlank() -> fail("Введите email")
             state.password.isBlank() -> fail("Введите пароль")
-            else -> {
-                state = state.copy(isLoggedIn = true, error = null)
-                true
+            else -> viewModelScope.launch {
+                state = state.copy(isLoading = true, error = null)
+                runCatching {
+                    loginUseCase(state.email, state.password)
+                }.onSuccess { user ->
+                    state = state.copy(isLoading = false, user = user, error = null)
+                    onSuccess()
+                }.onFailure { error ->
+                    state = state.copy(isLoading = false, error = error.message ?: "Не удалось войти")
+                }
             }
         }
     }
 
-    fun register(): Boolean {
-        return when {
+    fun register(onSuccess: () -> Unit) {
+        when {
             state.email.isBlank() -> fail("Введите email")
             state.password.length < 6 -> fail("Пароль должен быть не короче 6 символов")
             state.password != state.confirmPassword -> fail("Пароли не совпадают")
-            else -> {
-                state = state.copy(isLoggedIn = true, error = null)
-                true
+            else -> viewModelScope.launch {
+                state = state.copy(isLoading = true, error = null)
+                runCatching {
+                    registerUseCase(state.email, state.password)
+                }.onSuccess { user ->
+                    state = state.copy(isLoading = false, user = user, error = null)
+                    onSuccess()
+                }.onFailure { error ->
+                    state = state.copy(isLoading = false, error = error.message ?: "Не удалось зарегистрироваться")
+                }
             }
         }
     }
 
     fun logout() {
+        repository.logout()
         state = AuthState()
     }
 
-    private fun fail(message: String): Boolean {
+    private fun fail(message: String) {
         state = state.copy(error = message)
-        return false
+    }
+
+    class Factory(
+        private val authRepository: AuthRepository
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return AuthViewModel(authRepository) as T
+        }
     }
 }
-

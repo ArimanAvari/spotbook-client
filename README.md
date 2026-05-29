@@ -14,6 +14,12 @@ Android-клиент курсового проекта «Личный путев
 .\gradlew.bat assembleDebug
 ```
 
+Backend по умолчанию ожидается по адресу `http://10.0.2.2:8080`, это удобно для Android Emulator. Для реального устройства можно собрать debug APK с другим адресом:
+
+```powershell
+.\gradlew.bat assembleDebug -PbackendBaseUrl=http://192.168.1.10:8080
+```
+
 ## Стек
 
 - Jetpack Compose;
@@ -67,5 +73,9 @@ spotbook_local.db
 - синхронизация.
 
 Карточки и группы пока работают с локальной Room-базой. Подключение к backend будет добавлено следующим этапом.
+
+## Backend
+
+Экран входа и регистрации подключён к Ktor backend. JWT-токен сохраняется локально в `SharedPreferences` и используется для защищённых запросов.
 
 Разработка ведётся в отдельной ветке `android-dev`.

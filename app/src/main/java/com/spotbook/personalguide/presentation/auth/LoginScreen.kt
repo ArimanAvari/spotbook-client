@@ -65,14 +65,16 @@ fun LoginScreen(
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
             Button(
-                onClick = { if (viewModel.login()) onLoginSuccess() },
-                modifier = Modifier.fillMaxWidth()
+                onClick = { viewModel.login(onLoginSuccess) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
                 Text("Войти")
             }
             OutlinedButton(
                 onClick = onRegisterClick,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
                 Text("Регистрация")
             }
@@ -83,4 +85,3 @@ fun LoginScreen(
         }
     }
 }
-

@@ -70,18 +70,19 @@ fun RegisterScreen(
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
             Button(
-                onClick = { if (viewModel.register()) onRegisterSuccess() },
-                modifier = Modifier.fillMaxWidth()
+                onClick = { viewModel.register(onRegisterSuccess) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
                 Text("Зарегистрироваться")
             }
             OutlinedButton(
                 onClick = onBackClick,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
             ) {
                 Text("Назад")
             }
         }
     }
 }
-
