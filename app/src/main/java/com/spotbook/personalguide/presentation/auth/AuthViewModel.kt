@@ -76,6 +76,27 @@ class AuthViewModel(
         }
     }
 
+    fun restoreSession(onSuccess: suspend () -> Unit, onFailure: () -> Unit) {
+        viewModelScope.launch {
+            if (!repository.hasToken()) {
+                onFailure()
+                return@launch
+            }
+
+            state = state.copy(isLoading = true, error = null)
+            try {
+                val user = repository.getCurrentUser()
+                state = state.copy(user = user, error = null)
+                onSuccess()
+                state = state.copy(isLoading = false)
+            } catch (error: Throwable) {
+                repository.logout()
+                state = AuthState(error = error.message ?: "Не удалось восстановить вход")
+                onFailure()
+            }
+        }
+    }
+
     fun logout() {
         repository.logout()
         state = AuthState()

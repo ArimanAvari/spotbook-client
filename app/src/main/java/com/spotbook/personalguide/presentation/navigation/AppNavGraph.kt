@@ -1,6 +1,7 @@
 package com.spotbook.personalguide.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -11,6 +12,7 @@ import com.spotbook.personalguide.data.local.AppDatabase
 import com.spotbook.personalguide.domain.repository.AuthRepository
 import com.spotbook.personalguide.domain.repository.SyncRepository
 import com.spotbook.personalguide.presentation.auth.AuthViewModel
+import com.spotbook.personalguide.presentation.auth.LoadingScreen
 import com.spotbook.personalguide.presentation.auth.LoginScreen
 import com.spotbook.personalguide.presentation.auth.RegisterScreen
 import com.spotbook.personalguide.presentation.groups.GroupListScreen
@@ -51,8 +53,27 @@ fun AppNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = AppRoute.Login.route
+        startDestination = AppRoute.Loading.route
     ) {
+        composable(AppRoute.Loading.route) {
+            LaunchedEffect(Unit) {
+                authViewModel.restoreSession(
+                    onSuccess = {
+                        loadAccountData()
+                        navController.navigate(AppRoute.Places.route) {
+                            popUpTo(AppRoute.Loading.route) { inclusive = true }
+                        }
+                    },
+                    onFailure = {
+                        navController.navigate(AppRoute.Login.route) {
+                            popUpTo(AppRoute.Loading.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            LoadingScreen()
+        }
+
         composable(AppRoute.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
@@ -173,6 +194,7 @@ fun AppNavGraph(
 }
 
 sealed class AppRoute(val route: String) {
+    data object Loading : AppRoute("loading")
     data object Login : AppRoute("login")
     data object Register : AppRoute("register")
     data object Places : AppRoute("places")
