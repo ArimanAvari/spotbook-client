@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.spotbook.personalguide.domain.model.PlaceStatus
+import com.spotbook.personalguide.presentation.common.AdaptivePane
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,67 +46,115 @@ fun PlaceEditScreen(
             )
         }
     ) { padding ->
-        Column(
+        AdaptivePane(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp),
+            wideFraction = 0.62f
         ) {
-            OutlinedTextField(form.title, viewModel::onTitleChange, Modifier.fillMaxWidth(), label = { Text("Название") })
-            OutlinedTextField(form.address, viewModel::onAddressChange, Modifier.fillMaxWidth(), label = { Text("Адрес") })
-            OutlinedTextField(form.comment, viewModel::onCommentChange, Modifier.fillMaxWidth(), label = { Text("Комментарий") })
-            OutlinedTextField(form.photoPath, viewModel::onPhotoPathChange, Modifier.fillMaxWidth(), label = { Text("Путь к фото") })
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = form.title,
+                    onValueChange = viewModel::onTitleChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Название") },
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = form.address,
+                    onValueChange = viewModel::onAddressChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Адрес") },
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = form.comment,
+                    onValueChange = viewModel::onCommentChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Комментарий") }
+                )
+                OutlinedTextField(
+                    value = form.photoPath,
+                    onValueChange = viewModel::onPhotoPathChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Путь к фото") },
+                    singleLine = true
+                )
 
-            Text("Оценка")
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                (1..5).forEach { rating ->
-                    if (form.rating == rating) {
-                        Button(onClick = { viewModel.onRatingChange(rating) }) { Text(rating.toString()) }
-                    } else {
-                        OutlinedButton(onClick = { viewModel.onRatingChange(rating) }) { Text(rating.toString()) }
+                Text("Оценка")
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (1..5).forEach { rating ->
+                        if (form.rating == rating) {
+                            Button(onClick = { viewModel.onRatingChange(rating) }) { Text(rating.toString()) }
+                        } else {
+                            OutlinedButton(onClick = { viewModel.onRatingChange(rating) }) { Text(rating.toString()) }
+                        }
                     }
                 }
-            }
 
-            Text("Статус")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusButton("Хочу посетить", form.status == PlaceStatus.WANT_TO_VISIT) {
-                    viewModel.onStatusChange(PlaceStatus.WANT_TO_VISIT)
+                Text("Статус")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatusButton(
+                        text = "Хочу посетить",
+                        selected = form.status == PlaceStatus.WANT_TO_VISIT,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        viewModel.onStatusChange(PlaceStatus.WANT_TO_VISIT)
+                    }
+                    StatusButton(
+                        text = "Посещено",
+                        selected = form.status == PlaceStatus.VISITED,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        viewModel.onStatusChange(PlaceStatus.VISITED)
+                    }
                 }
-                StatusButton("Посещено", form.status == PlaceStatus.VISITED) {
-                    viewModel.onStatusChange(PlaceStatus.VISITED)
-                }
-            }
 
-            Text("Группа")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusButton("Без группы", form.groupId == null) { viewModel.onGroupChange(null) }
-            }
-            viewModel.state.groups.forEach { group ->
-                OutlinedButton(onClick = { viewModel.onGroupChange(group.localId) }) {
-                    Text(if (form.groupId == group.localId) "${group.name} *" else group.name)
+                Text("Группа")
+                StatusButton(
+                    text = "Без группы",
+                    selected = form.groupId == null,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    viewModel.onGroupChange(null)
                 }
-            }
+                viewModel.state.groups.forEach { group ->
+                    OutlinedButton(
+                        onClick = { viewModel.onGroupChange(group.localId) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (form.groupId == group.localId) "${group.name} *" else group.name)
+                    }
+                }
 
-            viewModel.state.error?.let { Text(it) }
-            Button(
-                onClick = { viewModel.savePlace(placeId, onSaved) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Сохранить")
+                viewModel.state.error?.let { Text(it) }
+                Button(
+                    onClick = { viewModel.savePlace(placeId, onSaved) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Сохранить")
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StatusButton(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun StatusButton(
+    text: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     if (selected) {
-        Button(onClick = onClick) { Text(text) }
+        Button(onClick = onClick, modifier = modifier) { Text(text) }
     } else {
-        OutlinedButton(onClick = onClick) { Text(text) }
+        OutlinedButton(onClick = onClick, modifier = modifier) { Text(text) }
     }
 }
-

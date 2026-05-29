@@ -111,7 +111,10 @@ fun AppNavGraph(
                 viewModel = placeViewModel,
                 placeId = id,
                 onBackClick = { navController.popBackStack() },
-                onEditClick = { navController.navigate(AppRoute.placeEdit(id)) },
+                onEditClick = {
+                    placeViewModel.startEdit(id, forceReload = true)
+                    navController.navigate(AppRoute.placeEdit(id))
+                },
                 onDeleted = { navController.popBackStack() }
             )
         }

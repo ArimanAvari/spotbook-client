@@ -11,19 +11,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spotbook.personalguide.domain.model.PlaceCard
 import com.spotbook.personalguide.domain.model.PlaceStatus
+import com.spotbook.personalguide.presentation.common.AdaptivePane
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,24 +49,33 @@ fun PlaceListScreen(
             )
         }
     ) { padding ->
-        Column(
+        AdaptivePane(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onAddClick) { Text("Добавить") }
-                OutlinedButton(onClick = onGroupsClick) { Text("Группы") }
-            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onAddClick) { Text("Добавить") }
+                    OutlinedButton(onClick = onGroupsClick) { Text("Группы") }
+                }
 
-            if (state.places.isEmpty()) {
-                Text("Карточек пока нет")
-            } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(state.places, key = { it.localId }) { place ->
-                        PlaceListItem(place = place, onClick = { onPlaceClick(place.localId) })
+                if (state.places.isEmpty()) {
+                    Text("Карточек пока нет")
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(state.places, key = { it.localId }) { place ->
+                            PlaceListItem(place = place, onClick = { onPlaceClick(place.localId) })
+                        }
                     }
                 }
             }
@@ -96,4 +106,3 @@ private fun PlaceListItem(place: PlaceCard, onClick: () -> Unit) {
         }
     }
 }
-

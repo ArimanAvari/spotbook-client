@@ -18,6 +18,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.spotbook.personalguide.presentation.common.AdaptivePane
 import com.spotbook.personalguide.presentation.places.PlaceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,31 +41,41 @@ fun GroupPlacesScreen(
             )
         }
     ) { padding ->
-        Column(
+        AdaptivePane(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp)
         ) {
-            if (places.isEmpty()) {
-                Text("В этой группе пока нет карточек")
-            }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(places, key = { it.localId }) { place ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(place.title)
-                                Text(place.address)
-                            }
-                            OutlinedButton(onClick = { placeViewModel.removeFromGroup(place.localId) }) {
-                                Text("Отвязать")
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (places.isEmpty()) {
+                    Text("В этой группе пока нет карточек")
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(places, key = { it.localId }) { place ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(place.title, maxLines = 2)
+                                    Text(place.address, maxLines = 2)
+                                }
+                                OutlinedButton(onClick = { placeViewModel.removeFromGroup(place.localId) }) {
+                                    Text("Отвязать")
+                                }
                             }
                         }
                     }
@@ -73,4 +84,3 @@ fun GroupPlacesScreen(
         }
     }
 }
-

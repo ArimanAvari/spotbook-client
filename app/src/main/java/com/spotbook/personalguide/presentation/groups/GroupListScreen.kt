@@ -21,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.spotbook.personalguide.presentation.common.AdaptivePane
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,41 +40,54 @@ fun GroupListScreen(
             )
         }
     ) { padding ->
-        Column(
+        AdaptivePane(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp)
         ) {
-            OutlinedTextField(
-                value = state.newGroupName,
-                onValueChange = viewModel::onNewGroupNameChange,
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Название группы") },
-                singleLine = true
-            )
-            Button(onClick = viewModel::createGroup, modifier = Modifier.fillMaxWidth()) {
-                Text("Создать группу")
-            }
-            state.error?.let { Text(it) }
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = state.newGroupName,
+                    onValueChange = viewModel::onNewGroupNameChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Название группы") },
+                    singleLine = true
+                )
+                Button(onClick = viewModel::createGroup, modifier = Modifier.fillMaxWidth()) {
+                    Text("Создать группу")
+                }
+                state.error?.let { Text(it) }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.groups, key = { it.localId }) { group ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onGroupClick(group.localId) }
-                    ) {
-                        Row(
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(state.groups, key = { it.localId }) { group ->
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .clickable { onGroupClick(group.localId) }
                         ) {
-                            Text(group.name)
-                            OutlinedButton(onClick = { viewModel.deleteGroup(group.localId) }) {
-                                Text("Удалить")
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = group.name,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 2
+                                )
+                                OutlinedButton(onClick = { viewModel.deleteGroup(group.localId) }) {
+                                    Text("Удалить")
+                                }
                             }
                         }
                     }
@@ -82,4 +96,3 @@ fun GroupListScreen(
         }
     }
 }
-

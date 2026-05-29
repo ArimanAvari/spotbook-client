@@ -20,6 +20,8 @@ class PlaceViewModel(
     private val placeDao: PlaceDao,
     private val groupDao: GroupDao
 ) : ViewModel() {
+    private var activeEditId: Long? = null
+
     var state by mutableStateOf(PlaceState())
         private set
 
@@ -38,12 +40,17 @@ class PlaceViewModel(
     }
 
     fun startCreate() {
+        activeEditId = null
         formState = PlaceFormState()
     }
 
-    fun startEdit(localId: Long) {
+    fun startEdit(localId: Long, forceReload: Boolean = false) {
+        if (!forceReload && activeEditId == localId) return
+        activeEditId = localId
+
         viewModelScope.launch {
             val place = placeDao.getPlaceByLocalId(localId) ?: return@launch
+            if (activeEditId != localId) return@launch
             formState = PlaceFormState(
                 title = place.title,
                 address = place.address,
@@ -164,4 +171,3 @@ class PlaceViewModel(
         }
     }
 }
-
