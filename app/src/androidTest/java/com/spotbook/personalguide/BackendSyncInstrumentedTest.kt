@@ -76,6 +76,7 @@ class BackendSyncInstrumentedTest {
         )
 
         val repository = SyncRepositoryImpl(
+            context = context,
             apiService = apiService,
             placeDao = database.placeDao(),
             groupDao = database.groupDao()
@@ -104,4 +105,3 @@ class BackendSyncInstrumentedTest {
         assertTrue(afterDelete.none { it.serverId == importedPlace.serverId })
     }
 }
-

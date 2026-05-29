@@ -24,4 +24,19 @@ object LocalPhotoStorage {
 
         return target.absolutePath
     }
+
+    fun saveServerPhoto(context: Context, sourcePath: String, bytes: ByteArray): String {
+        val directory = File(context.filesDir, "place_photos").apply {
+            mkdirs()
+        }
+        val extension = sourcePath
+            .substringBefore('?')
+            .substringAfterLast('.', "jpg")
+            .takeIf { it.isNotBlank() && it.length <= 8 }
+            ?: "jpg"
+        val target = File(directory, "server_${sourcePath.hashCode().toUInt()}.$extension")
+
+        target.writeBytes(bytes)
+        return target.absolutePath
+    }
 }

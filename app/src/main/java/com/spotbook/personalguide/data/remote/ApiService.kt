@@ -153,6 +153,14 @@ class ApiService(
         return client.get("$baseUrl/api/sync/import") { authHeader() }.checkedBody()
     }
 
+    suspend fun downloadPhoto(photoPath: String): ByteArray {
+        val url = when {
+            photoPath.startsWith("http://") || photoPath.startsWith("https://") -> photoPath
+            else -> "${baseUrl.trimEnd('/')}/${photoPath.trimStart('/')}"
+        }
+        return client.get(url).checkedBody()
+    }
+
     private fun io.ktor.client.request.HttpRequestBuilder.authHeader() {
         tokenStorage.getToken()?.let { token ->
             header(HttpHeaders.Authorization, "Bearer $token")

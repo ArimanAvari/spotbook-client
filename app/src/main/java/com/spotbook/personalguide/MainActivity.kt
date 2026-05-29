@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
         val apiService = ApiService(BuildConfig.BACKEND_BASE_URL, tokenStorage)
         val authRepository = AuthRepositoryImpl(apiService, tokenStorage)
         val syncRepository = SyncRepositoryImpl(
+            context = applicationContext,
             apiService = apiService,
             placeDao = database.placeDao(),
             groupDao = database.groupDao()

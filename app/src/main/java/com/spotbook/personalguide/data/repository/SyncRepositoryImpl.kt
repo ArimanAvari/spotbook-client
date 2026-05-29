@@ -1,7 +1,9 @@
 package com.spotbook.personalguide.data.repository
 
+import android.content.Context
 import com.spotbook.personalguide.data.local.GroupDao
 import com.spotbook.personalguide.data.local.GroupEntity
+import com.spotbook.personalguide.data.local.LocalPhotoStorage
 import com.spotbook.personalguide.data.local.PlaceDao
 import com.spotbook.personalguide.data.local.PlaceEntity
 import com.spotbook.personalguide.data.remote.ApiService
@@ -17,6 +19,7 @@ import java.io.File
 import java.time.Instant
 
 class SyncRepositoryImpl(
+    private val context: Context,
     private val apiService: ApiService,
     private val placeDao: PlaceDao,
     private val groupDao: GroupDao
@@ -58,11 +61,15 @@ class SyncRepositoryImpl(
             groupLocalIdsByServerId[group.serverId] = localId
         }
 
-        placeDao.insertPlaces(
-            data.places.map { place ->
-                place.toEntity(groupLocalIdsByServerId[place.groupServerId])
-            }
-        )
+        val places = mutableListOf<PlaceEntity>()
+        data.places.forEach { place ->
+            places += place.toEntity(
+                localGroupId = groupLocalIdsByServerId[place.groupServerId],
+                existingPhotoPath = null,
+                forcePhotoDownload = true
+            )
+        }
+        placeDao.insertPlaces(places)
     }
 
     private suspend fun mergeImportedData(data: SyncImportResponseDto) {
@@ -103,7 +110,13 @@ class SyncRepositoryImpl(
 
             when {
                 existing == null -> {
-                    placeDao.insertPlace(place.toEntity(localGroupId))
+                    placeDao.insertPlace(
+                        place.toEntity(
+                            localGroupId = localGroupId,
+                            existingPhotoPath = null,
+                            forcePhotoDownload = true
+                        )
+                    )
                 }
 
                 existing.syncStatus.isLocalChange() -> {
@@ -111,7 +124,13 @@ class SyncRepositoryImpl(
                 }
 
                 isServerNewer(place.updatedAt, existing.updatedAt) -> {
-                    placeDao.updatePlace(place.toEntity(localGroupId).copy(localId = existing.localId))
+                    placeDao.updatePlace(
+                        place.toEntity(
+                            localGroupId = localGroupId,
+                            existingPhotoPath = existing.photoPath,
+                            forcePhotoDownload = true
+                        ).copy(localId = existing.localId)
+                    )
                 }
             }
         }
@@ -196,12 +215,16 @@ class SyncRepositoryImpl(
         )
     }
 
-    private fun ServerPlaceDto.toEntity(localGroupId: Long?): PlaceEntity {
+    private suspend fun ServerPlaceDto.toEntity(
+        localGroupId: Long?,
+        existingPhotoPath: String?,
+        forcePhotoDownload: Boolean
+    ): PlaceEntity {
         return PlaceEntity(
             serverId = serverId,
             title = title,
             address = address,
-            photoPath = photoPath,
+            photoPath = resolveImportedPhotoPath(photoPath, existingPhotoPath, forcePhotoDownload),
             rating = rating,
             comment = comment,
             status = status,
@@ -210,5 +233,27 @@ class SyncRepositoryImpl(
             createdAt = createdAt,
             updatedAt = updatedAt
         )
+    }
+
+    private suspend fun resolveImportedPhotoPath(
+        serverPhotoPath: String?,
+        existingPhotoPath: String?,
+        forceDownload: Boolean
+    ): String? {
+        if (serverPhotoPath.isNullOrBlank()) return null
+
+        val existingFile = existingPhotoPath
+            ?.takeIf { !it.isServerPhotoPath() }
+            ?.let(::File)
+        if (!forceDownload && existingFile?.exists() == true) {
+            return existingFile.absolutePath
+        }
+
+        return runCatching {
+            val bytes = apiService.downloadPhoto(serverPhotoPath)
+            LocalPhotoStorage.saveServerPhoto(context, serverPhotoPath, bytes)
+        }.getOrElse {
+            existingFile?.takeIf { file -> file.exists() }?.absolutePath ?: serverPhotoPath
+        }
     }
 }
