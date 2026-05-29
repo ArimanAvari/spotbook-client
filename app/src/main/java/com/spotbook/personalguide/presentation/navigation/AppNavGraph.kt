@@ -158,7 +158,8 @@ fun AppNavGraph(
                 groupId = id,
                 groupViewModel = groupViewModel,
                 placeViewModel = placeViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onPlaceClick = { placeId -> navController.navigate(AppRoute.placeDetails(placeId)) }
             )
         }
 

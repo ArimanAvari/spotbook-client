@@ -1,5 +1,6 @@
 package com.spotbook.personalguide.presentation.groups
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,7 +28,8 @@ fun GroupPlacesScreen(
     groupId: Long,
     groupViewModel: GroupViewModel,
     placeViewModel: PlaceViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onPlaceClick: (Long) -> Unit
 ) {
     val state = groupViewModel.state
     val group = state.groups.firstOrNull { it.localId == groupId }
@@ -62,7 +64,11 @@ fun GroupPlacesScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(places, key = { it.localId }) { place ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onPlaceClick(place.localId) }
+                        ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
