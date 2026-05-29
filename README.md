@@ -37,4 +37,19 @@ app/src/main/java/com/spotbook/personalguide
 - `domain`;
 - `presentation`.
 
+## Локальная база данных
+
+Добавлен Room. Локальная база называется:
+
+```text
+spotbook_local.db
+```
+
+Таблицы:
+
+- `local_place_cards`;
+- `local_groups`.
+
+Для карточек и групп есть DAO, Entity, доменные модели и мапперы между слоями.
+
 Разработка ведётся в отдельной ветке `android-dev`.
