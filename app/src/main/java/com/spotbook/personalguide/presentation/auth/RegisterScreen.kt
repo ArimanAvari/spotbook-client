@@ -20,11 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.spotbook.personalguide.domain.model.User
 
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
-    onRegisterSuccess: suspend () -> Unit,
+    onRegisterSuccess: suspend (User) -> Unit,
     onBackClick: () -> Unit
 ) {
     val state = viewModel.state

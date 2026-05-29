@@ -2,6 +2,7 @@ package com.spotbook.personalguide.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -9,6 +10,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.spotbook.personalguide.data.local.AppDatabase
+import com.spotbook.personalguide.data.token.AccountStorage
+import com.spotbook.personalguide.domain.model.User
 import com.spotbook.personalguide.domain.repository.AuthRepository
 import com.spotbook.personalguide.domain.repository.SyncRepository
 import com.spotbook.personalguide.presentation.auth.AuthViewModel
@@ -31,6 +34,7 @@ fun AppNavGraph(
     authRepository: AuthRepository,
     syncRepository: SyncRepository
 ) {
+    val accountStorage = AccountStorage(LocalContext.current)
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModel.Factory(authRepository)
@@ -45,9 +49,12 @@ fun AppNavGraph(
         factory = SyncViewModel.Factory(syncRepository)
     )
 
-    suspend fun loadAccountData() {
-        database.placeDao().clearPlaces()
-        database.groupDao().clearGroups()
+    suspend fun loadAccountData(user: User) {
+        if (accountStorage.getUserId() != user.id) {
+            database.placeDao().clearPlaces()
+            database.groupDao().clearGroups()
+        }
+        accountStorage.saveUser(user)
         syncRepository.importData()
     }
 
@@ -58,8 +65,8 @@ fun AppNavGraph(
         composable(AppRoute.Loading.route) {
             LaunchedEffect(Unit) {
                 authViewModel.restoreSession(
-                    onSuccess = {
-                        loadAccountData()
+                    onSuccess = { user ->
+                        loadAccountData(user)
                         navController.navigate(AppRoute.Places.route) {
                             popUpTo(AppRoute.Loading.route) { inclusive = true }
                         }
@@ -77,8 +84,8 @@ fun AppNavGraph(
         composable(AppRoute.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
-                onLoginSuccess = {
-                    loadAccountData()
+                onLoginSuccess = { user ->
+                    loadAccountData(user)
                     navController.navigate(AppRoute.Places.route) {
                         popUpTo(AppRoute.Login.route) { inclusive = true }
                     }
@@ -90,8 +97,8 @@ fun AppNavGraph(
         composable(AppRoute.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
-                onRegisterSuccess = {
-                    loadAccountData()
+                onRegisterSuccess = { user ->
+                    loadAccountData(user)
                     navController.navigate(AppRoute.Places.route) {
                         popUpTo(AppRoute.Login.route) { inclusive = true }
                     }

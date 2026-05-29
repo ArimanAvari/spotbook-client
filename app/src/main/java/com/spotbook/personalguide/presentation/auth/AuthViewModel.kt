@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.spotbook.personalguide.domain.repository.AuthRepository
 import com.spotbook.personalguide.domain.usecase.LoginUseCase
 import com.spotbook.personalguide.domain.usecase.RegisterUseCase
+import com.spotbook.personalguide.domain.model.User
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
@@ -33,7 +34,7 @@ class AuthViewModel(
         state = state.copy(confirmPassword = value, error = null)
     }
 
-    fun login(onSuccess: suspend () -> Unit) {
+    fun login(onSuccess: suspend (User) -> Unit) {
         when {
             state.email.isBlank() -> fail("Введите email")
             state.password.isBlank() -> fail("Введите пароль")
@@ -42,7 +43,7 @@ class AuthViewModel(
                 try {
                     val user = loginUseCase(state.email, state.password)
                     state = state.copy(user = user, error = null)
-                    onSuccess()
+                    onSuccess(user)
                     state = state.copy(isLoading = false)
                 } catch (error: Throwable) {
                     state = state.copy(
@@ -54,7 +55,7 @@ class AuthViewModel(
         }
     }
 
-    fun register(onSuccess: suspend () -> Unit) {
+    fun register(onSuccess: suspend (User) -> Unit) {
         when {
             state.email.isBlank() -> fail("Введите email")
             state.password.length < 6 -> fail("Пароль должен быть не короче 6 символов")
@@ -64,7 +65,7 @@ class AuthViewModel(
                 try {
                     val user = registerUseCase(state.email, state.password)
                     state = state.copy(user = user, error = null)
-                    onSuccess()
+                    onSuccess(user)
                     state = state.copy(isLoading = false)
                 } catch (error: Throwable) {
                     state = state.copy(
@@ -76,7 +77,7 @@ class AuthViewModel(
         }
     }
 
-    fun restoreSession(onSuccess: suspend () -> Unit, onFailure: () -> Unit) {
+    fun restoreSession(onSuccess: suspend (User) -> Unit, onFailure: () -> Unit) {
         viewModelScope.launch {
             if (!repository.hasToken()) {
                 onFailure()
@@ -87,7 +88,7 @@ class AuthViewModel(
             try {
                 val user = repository.getCurrentUser()
                 state = state.copy(user = user, error = null)
-                onSuccess()
+                onSuccess(user)
                 state = state.copy(isLoading = false)
             } catch (error: Throwable) {
                 repository.logout()
