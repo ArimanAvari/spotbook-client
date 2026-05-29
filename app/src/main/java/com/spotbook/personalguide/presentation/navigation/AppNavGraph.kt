@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.spotbook.personalguide.data.local.AppDatabase
 import com.spotbook.personalguide.domain.repository.AuthRepository
+import com.spotbook.personalguide.domain.repository.SyncRepository
 import com.spotbook.personalguide.presentation.auth.AuthViewModel
 import com.spotbook.personalguide.presentation.auth.LoginScreen
 import com.spotbook.personalguide.presentation.auth.RegisterScreen
@@ -25,7 +26,8 @@ import com.spotbook.personalguide.presentation.sync.SyncViewModel
 @Composable
 fun AppNavGraph(
     database: AppDatabase,
-    authRepository: AuthRepository
+    authRepository: AuthRepository,
+    syncRepository: SyncRepository
 ) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel(
@@ -37,7 +39,9 @@ fun AppNavGraph(
     val groupViewModel: GroupViewModel = viewModel(
         factory = GroupViewModel.Factory(database.groupDao(), database.placeDao())
     )
-    val syncViewModel: SyncViewModel = viewModel()
+    val syncViewModel: SyncViewModel = viewModel(
+        factory = SyncViewModel.Factory(syncRepository)
+    )
 
     NavHost(
         navController = navController,

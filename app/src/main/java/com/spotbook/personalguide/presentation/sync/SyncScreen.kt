@@ -40,10 +40,18 @@ fun SyncScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Button(onClick = viewModel::exportData, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = viewModel::exportData,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
+            ) {
                 Text("Экспорт на сервер")
             }
-            OutlinedButton(onClick = viewModel::importData, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = viewModel::importData,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading
+            ) {
                 Text("Импорт с сервера")
             }
             Text(state.statusText)

@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import com.spotbook.personalguide.data.local.AppDatabase
 import com.spotbook.personalguide.data.remote.ApiService
 import com.spotbook.personalguide.data.repository.AuthRepositoryImpl
+import com.spotbook.personalguide.data.repository.SyncRepositoryImpl
 import com.spotbook.personalguide.data.token.TokenStorage
 import com.spotbook.personalguide.presentation.navigation.AppNavGraph
 import com.spotbook.personalguide.presentation.theme.SpotBookTheme
@@ -17,12 +18,18 @@ class MainActivity : ComponentActivity() {
         val tokenStorage = TokenStorage(this)
         val apiService = ApiService(BuildConfig.BACKEND_BASE_URL, tokenStorage)
         val authRepository = AuthRepositoryImpl(apiService, tokenStorage)
+        val syncRepository = SyncRepositoryImpl(
+            apiService = apiService,
+            placeDao = database.placeDao(),
+            groupDao = database.groupDao()
+        )
 
         setContent {
             SpotBookTheme {
                 AppNavGraph(
                     database = database,
-                    authRepository = authRepository
+                    authRepository = authRepository,
+                    syncRepository = syncRepository
                 )
             }
         }
