@@ -2,7 +2,19 @@
 
 Android-клиент курсового проекта «Личный путеводитель».
 
-На следующих этапах здесь будет реализовано мобильное приложение на Kotlin:
+Приложение создаётся на Kotlin. Сейчас добавлен базовый Android-проект с Jetpack Compose, Material 3 и Navigation Compose.
+
+## Запуск
+
+Проект открывается в Android Studio как обычный Android/Gradle-проект.
+
+Для проверки сборки:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
+## Стек
 
 - Jetpack Compose;
 - Navigation Compose;
@@ -10,5 +22,19 @@ Android-клиент курсового проекта «Личный путев
 - Room;
 - Clean Architecture;
 - ручная синхронизация с backend.
+
+## Структура
+
+Основной пакет:
+
+```text
+app/src/main/java/com/spotbook/personalguide
+```
+
+Заложены слои:
+
+- `data`;
+- `domain`;
+- `presentation`.
 
 Разработка ведётся в отдельной ветке `android-dev`.
