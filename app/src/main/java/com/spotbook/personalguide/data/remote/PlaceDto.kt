@@ -32,3 +32,7 @@ data class UpdatePlaceStatusRequestDto(
     val status: PlaceStatus
 )
 
+@Serializable
+data class PhotoUploadResponseDto(
+    val photoPath: String
+)

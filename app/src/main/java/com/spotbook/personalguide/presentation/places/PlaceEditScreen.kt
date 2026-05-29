@@ -1,8 +1,11 @@
 package com.spotbook.personalguide.presentation.places
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,10 +21,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.spotbook.personalguide.data.local.LocalPhotoStorage
 import com.spotbook.personalguide.domain.model.PlaceStatus
 import com.spotbook.personalguide.presentation.common.AdaptivePane
+import com.spotbook.personalguide.presentation.common.photoModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +42,13 @@ fun PlaceEditScreen(
     onSaved: () -> Unit
 ) {
     val form = viewModel.formState
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val localPath = LocalPhotoStorage.savePhoto(context, uri)
+            viewModel.onPhotoPathChange(localPath)
+        }
+    }
 
     LaunchedEffect(placeId) {
         if (placeId != null) viewModel.startEdit(placeId)
@@ -86,6 +102,23 @@ fun PlaceEditScreen(
                     label = { Text("Путь к фото") },
                     singleLine = true
                 )
+                OutlinedButton(
+                    onClick = { photoPicker.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Выбрать фото")
+                }
+                photoModel(form.photoPath)?.let { model ->
+                    AsyncImage(
+                        model = model,
+                        contentDescription = "Фото места",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f),
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.Center
+                    )
+                }
 
                 Text("Оценка")
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

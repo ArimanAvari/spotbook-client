@@ -68,6 +68,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")

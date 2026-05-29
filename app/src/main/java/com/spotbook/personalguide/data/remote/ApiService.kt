@@ -5,6 +5,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -14,10 +16,12 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import java.io.File
 import kotlinx.serialization.json.Json
 
 class ApiService(
@@ -87,6 +91,28 @@ class ApiService(
         }.checkedBody()
     }
 
+    suspend fun uploadPlacePhoto(id: Long, photoFile: File): PhotoUploadResponseDto {
+        return client.post("$baseUrl/api/places/$id/photo") {
+            authHeader()
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append(
+                            key = "photo",
+                            value = photoFile.readBytes(),
+                            headers = Headers.build {
+                                append(
+                                    HttpHeaders.ContentDisposition,
+                                    "form-data; name=\"photo\"; filename=\"${photoFile.name}\""
+                                )
+                            }
+                        )
+                    }
+                )
+            )
+        }.checkedBody()
+    }
+
     suspend fun getGroups(): List<GroupDto> {
         return client.get("$baseUrl/api/groups") { authHeader() }.checkedBody()
     }
@@ -146,4 +172,3 @@ class ApiService(
 }
 
 class ApiException(message: String) : RuntimeException(message)
-

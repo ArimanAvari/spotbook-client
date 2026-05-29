@@ -13,6 +13,7 @@ import com.spotbook.personalguide.data.remote.SyncImportResponseDto
 import com.spotbook.personalguide.data.remote.SyncPlaceItemDto
 import com.spotbook.personalguide.domain.model.SyncStatus
 import com.spotbook.personalguide.domain.repository.SyncRepository
+import java.io.File
 
 class SyncRepositoryImpl(
     private val apiService: ApiService,
@@ -38,7 +39,8 @@ class SyncRepositoryImpl(
             )
         )
 
-        saveImportedData(response.data)
+        uploadLocalPhotos(dirtyPlaces, response.places)
+        saveImportedData(apiService.importData())
     }
 
     override suspend fun importData() {
@@ -79,7 +81,7 @@ class SyncRepositoryImpl(
             serverId = serverId,
             title = title,
             address = address,
-            photoPath = photoPath,
+            photoPath = photoPath.takeIf { it.isServerPhotoPath() },
             rating = rating,
             comment = comment,
             status = status,
@@ -89,6 +91,34 @@ class SyncRepositoryImpl(
             createdAt = createdAt,
             updatedAt = updatedAt
         )
+    }
+
+    private suspend fun uploadLocalPhotos(
+        places: List<PlaceEntity>,
+        mappings: List<com.spotbook.personalguide.data.remote.SyncIdMappingDto>
+    ) {
+        val serverIdsByLocalId = mappings
+            .mapNotNull { mapping -> mapping.serverId?.let { mapping.localId to it } }
+            .toMap()
+
+        places
+            .filter { it.syncStatus != SyncStatus.DELETED }
+            .forEach { place ->
+                val photoPath = place.photoPath ?: return@forEach
+                val photoFile = File(photoPath)
+                val serverId = serverIdsByLocalId[place.localId] ?: place.serverId ?: return@forEach
+                if (photoFile.exists() && photoFile.isFile) {
+                    apiService.uploadPlacePhoto(serverId, photoFile)
+                }
+            }
+    }
+
+    private fun String?.isServerPhotoPath(): Boolean {
+        return this != null && (
+            startsWith("uploads/") ||
+                startsWith("http://") ||
+                startsWith("https://")
+            )
     }
 
     private fun ServerGroupDto.toEntity(): GroupEntity {
@@ -117,4 +147,3 @@ class SyncRepositoryImpl(
         )
     }
 }
-
