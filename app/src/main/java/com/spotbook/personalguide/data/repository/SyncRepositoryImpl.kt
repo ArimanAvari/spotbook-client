@@ -14,6 +14,7 @@ import com.spotbook.personalguide.data.remote.SyncPlaceItemDto
 import com.spotbook.personalguide.domain.model.SyncStatus
 import com.spotbook.personalguide.domain.repository.SyncRepository
 import java.io.File
+import java.time.Instant
 
 class SyncRepositoryImpl(
     private val apiService: ApiService,
@@ -40,14 +41,14 @@ class SyncRepositoryImpl(
         )
 
         uploadLocalPhotos(dirtyPlaces, response.places)
-        saveImportedData(apiService.importData())
+        replaceImportedData(apiService.importData())
     }
 
     override suspend fun importData() {
-        saveImportedData(apiService.importData())
+        mergeImportedData(apiService.importData())
     }
 
-    private suspend fun saveImportedData(data: SyncImportResponseDto) {
+    private suspend fun replaceImportedData(data: SyncImportResponseDto) {
         placeDao.clearPlaces()
         groupDao.clearGroups()
 
@@ -62,6 +63,58 @@ class SyncRepositoryImpl(
                 place.toEntity(groupLocalIdsByServerId[place.groupServerId])
             }
         )
+    }
+
+    private suspend fun mergeImportedData(data: SyncImportResponseDto) {
+        val groupLocalIdsByServerId = mutableMapOf<Long, Long>()
+
+        data.groups.forEach { group ->
+            val existing = groupDao.getGroupByServerId(group.serverId)
+            val localId = when {
+                existing == null -> {
+                    groupDao.insertGroup(group.toEntity())
+                }
+
+                existing.syncStatus.isLocalChange() -> {
+                    existing.localId
+                }
+
+                isServerNewer(group.updatedAt, existing.updatedAt) -> {
+                    groupDao.updateGroup(group.toEntity().copy(localId = existing.localId))
+                    existing.localId
+                }
+
+                else -> existing.localId
+            }
+
+            if (existing?.syncStatus != SyncStatus.DELETED) {
+                groupLocalIdsByServerId[group.serverId] = localId
+            }
+        }
+
+        data.places.forEach { place ->
+            val existing = placeDao.getPlaceByServerId(place.serverId)
+            val localGroupId = place.groupServerId?.let { groupServerId ->
+                groupLocalIdsByServerId[groupServerId]
+                    ?: groupDao.getGroupByServerId(groupServerId)
+                        ?.takeIf { it.syncStatus != SyncStatus.DELETED }
+                        ?.localId
+            }
+
+            when {
+                existing == null -> {
+                    placeDao.insertPlace(place.toEntity(localGroupId))
+                }
+
+                existing.syncStatus.isLocalChange() -> {
+                    return@forEach
+                }
+
+                isServerNewer(place.updatedAt, existing.updatedAt) -> {
+                    placeDao.updatePlace(place.toEntity(localGroupId).copy(localId = existing.localId))
+                }
+            }
+        }
     }
 
     private fun GroupEntity.toSyncDto(): SyncGroupItemDto {
@@ -119,6 +172,18 @@ class SyncRepositoryImpl(
                 startsWith("http://") ||
                 startsWith("https://")
             )
+    }
+
+    private fun SyncStatus.isLocalChange(): Boolean {
+        return this == SyncStatus.NOT_SYNCED || this == SyncStatus.DELETED
+    }
+
+    private fun isServerNewer(serverUpdatedAt: String, localUpdatedAt: String): Boolean {
+        return runCatching {
+            Instant.parse(serverUpdatedAt).isAfter(Instant.parse(localUpdatedAt))
+        }.getOrElse {
+            serverUpdatedAt > localUpdatedAt
+        }
     }
 
     private fun ServerGroupDto.toEntity(): GroupEntity {
