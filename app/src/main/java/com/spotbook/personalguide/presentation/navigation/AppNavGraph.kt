@@ -43,6 +43,12 @@ fun AppNavGraph(
         factory = SyncViewModel.Factory(syncRepository)
     )
 
+    suspend fun loadAccountData() {
+        database.placeDao().clearPlaces()
+        database.groupDao().clearGroups()
+        syncRepository.importData()
+    }
+
     NavHost(
         navController = navController,
         startDestination = AppRoute.Login.route
@@ -51,6 +57,7 @@ fun AppNavGraph(
             LoginScreen(
                 viewModel = authViewModel,
                 onLoginSuccess = {
+                    loadAccountData()
                     navController.navigate(AppRoute.Places.route) {
                         popUpTo(AppRoute.Login.route) { inclusive = true }
                     }
@@ -63,6 +70,7 @@ fun AppNavGraph(
             RegisterScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = {
+                    loadAccountData()
                     navController.navigate(AppRoute.Places.route) {
                         popUpTo(AppRoute.Login.route) { inclusive = true }
                     }

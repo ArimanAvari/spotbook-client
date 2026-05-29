@@ -33,38 +33,44 @@ class AuthViewModel(
         state = state.copy(confirmPassword = value, error = null)
     }
 
-    fun login(onSuccess: () -> Unit) {
+    fun login(onSuccess: suspend () -> Unit) {
         when {
             state.email.isBlank() -> fail("Введите email")
             state.password.isBlank() -> fail("Введите пароль")
             else -> viewModelScope.launch {
                 state = state.copy(isLoading = true, error = null)
-                runCatching {
-                    loginUseCase(state.email, state.password)
-                }.onSuccess { user ->
-                    state = state.copy(isLoading = false, user = user, error = null)
+                try {
+                    val user = loginUseCase(state.email, state.password)
+                    state = state.copy(user = user, error = null)
                     onSuccess()
-                }.onFailure { error ->
-                    state = state.copy(isLoading = false, error = error.message ?: "Не удалось войти")
+                    state = state.copy(isLoading = false)
+                } catch (error: Throwable) {
+                    state = state.copy(
+                        isLoading = false,
+                        error = error.message ?: "Не удалось войти"
+                    )
                 }
             }
         }
     }
 
-    fun register(onSuccess: () -> Unit) {
+    fun register(onSuccess: suspend () -> Unit) {
         when {
             state.email.isBlank() -> fail("Введите email")
             state.password.length < 6 -> fail("Пароль должен быть не короче 6 символов")
             state.password != state.confirmPassword -> fail("Пароли не совпадают")
             else -> viewModelScope.launch {
                 state = state.copy(isLoading = true, error = null)
-                runCatching {
-                    registerUseCase(state.email, state.password)
-                }.onSuccess { user ->
-                    state = state.copy(isLoading = false, user = user, error = null)
+                try {
+                    val user = registerUseCase(state.email, state.password)
+                    state = state.copy(user = user, error = null)
                     onSuccess()
-                }.onFailure { error ->
-                    state = state.copy(isLoading = false, error = error.message ?: "Не удалось зарегистрироваться")
+                    state = state.copy(isLoading = false)
+                } catch (error: Throwable) {
+                    state = state.copy(
+                        isLoading = false,
+                        error = error.message ?: "Не удалось зарегистрироваться"
+                    )
                 }
             }
         }

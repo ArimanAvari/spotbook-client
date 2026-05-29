@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: suspend () -> Unit,
     onRegisterClick: () -> Unit
 ) {
     val state = viewModel.state

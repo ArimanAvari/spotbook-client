@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: suspend () -> Unit,
     onBackClick: () -> Unit
 ) {
     val state = viewModel.state
