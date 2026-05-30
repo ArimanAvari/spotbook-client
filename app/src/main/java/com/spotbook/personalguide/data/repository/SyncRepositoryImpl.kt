@@ -64,7 +64,12 @@ class SyncRepositoryImpl(
                     groupDao.insertGroup(group.toEntity())
                 }
 
-                existing.syncStatus.isLocalChange() -> {
+                existing.syncStatus == SyncStatus.DELETED -> {
+                    groupDao.updateGroup(group.toEntity().copy(localId = existing.localId))
+                    existing.localId
+                }
+
+                existing.syncStatus.isUnsyncedLocalChange() -> {
                     existing.localId
                 }
 
@@ -76,9 +81,7 @@ class SyncRepositoryImpl(
                 else -> existing.localId
             }
 
-            if (existing?.syncStatus != SyncStatus.DELETED) {
-                groupLocalIdsByServerId[group.serverId] = localId
-            }
+            groupLocalIdsByServerId[group.serverId] = localId
         }
 
         data.places.forEach { place ->
@@ -100,7 +103,16 @@ class SyncRepositoryImpl(
                     )
                 }
 
-                existing.syncStatus.isLocalChange() -> {
+                existing.syncStatus == SyncStatus.DELETED -> {
+                    placeDao.updatePlace(
+                        place.toEntity(
+                            localGroupId = localGroupId,
+                            existingPhotoPath = existing.photoPath
+                        ).copy(localId = existing.localId)
+                    )
+                }
+
+                existing.syncStatus.isUnsyncedLocalChange() -> {
                     return@forEach
                 }
 
@@ -221,8 +233,8 @@ class SyncRepositoryImpl(
             )
     }
 
-    private fun SyncStatus.isLocalChange(): Boolean {
-        return this == SyncStatus.NOT_SYNCED || this == SyncStatus.DELETED
+    private fun SyncStatus.isUnsyncedLocalChange(): Boolean {
+        return this == SyncStatus.NOT_SYNCED
     }
 
     private fun isServerNewer(serverUpdatedAt: String, localUpdatedAt: String): Boolean {
