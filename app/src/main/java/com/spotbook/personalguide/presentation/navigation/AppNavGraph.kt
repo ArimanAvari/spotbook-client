@@ -51,11 +51,15 @@ fun AppNavGraph(
 
     suspend fun loadAccountData(user: User) {
         if (accountStorage.getUserId() != user.id) {
-            database.placeDao().clearPlaces()
-            database.groupDao().clearGroups()
+            syncRepository.replaceDataFromServer()
+            accountStorage.saveUser(user)
+            return
         }
+
         accountStorage.saveUser(user)
-        syncRepository.importData()
+        runCatching {
+            syncRepository.importData()
+        }
     }
 
     NavHost(

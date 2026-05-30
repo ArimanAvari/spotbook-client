@@ -44,11 +44,16 @@ class SyncRepositoryImpl(
         )
 
         uploadLocalPhotos(dirtyPlaces, response.places)
-        replaceImportedData(apiService.importData())
+        mergeImportedData(apiService.importData())
     }
 
     override suspend fun importData() {
         mergeImportedData(apiService.importData())
+    }
+
+    override suspend fun replaceDataFromServer() {
+        val data = apiService.importData()
+        replaceImportedData(data)
     }
 
     private suspend fun replaceImportedData(data: SyncImportResponseDto) {
@@ -123,7 +128,7 @@ class SyncRepositoryImpl(
                     return@forEach
                 }
 
-                isServerNewer(place.updatedAt, existing.updatedAt) -> {
+                shouldUpdatePlaceFromServer(place, existing) -> {
                     placeDao.updatePlace(
                         place.toEntity(
                             localGroupId = localGroupId,
@@ -203,6 +208,14 @@ class SyncRepositoryImpl(
         }.getOrElse {
             serverUpdatedAt > localUpdatedAt
         }
+    }
+
+    private fun shouldUpdatePlaceFromServer(serverPlace: ServerPlaceDto, localPlace: PlaceEntity): Boolean {
+        if (isServerNewer(serverPlace.updatedAt, localPlace.updatedAt)) return true
+        val localPhoto = localPlace.photoPath
+        val serverPhoto = serverPlace.photoPath
+        return !serverPhoto.isNullOrBlank() &&
+            (localPhoto.isNullOrBlank() || localPhoto.isServerPhotoPath())
     }
 
     private fun ServerGroupDto.toEntity(): GroupEntity {
