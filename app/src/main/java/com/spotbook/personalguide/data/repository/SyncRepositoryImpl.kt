@@ -95,8 +95,7 @@ class SyncRepositoryImpl(
                     placeDao.insertPlace(
                         place.toEntity(
                             localGroupId = localGroupId,
-                            existingPhotoPath = null,
-                            forcePhotoDownload = true
+                            existingPhotoPath = null
                         )
                     )
                 }
@@ -109,8 +108,7 @@ class SyncRepositoryImpl(
                     placeDao.updatePlace(
                         place.toEntity(
                             localGroupId = localGroupId,
-                            existingPhotoPath = existing.photoPath,
-                            forcePhotoDownload = true
+                            existingPhotoPath = existing.photoPath
                         ).copy(localId = existing.localId)
                     )
                 }
@@ -247,14 +245,13 @@ class SyncRepositoryImpl(
 
     private suspend fun ServerPlaceDto.toEntity(
         localGroupId: Long?,
-        existingPhotoPath: String?,
-        forcePhotoDownload: Boolean
+        existingPhotoPath: String?
     ): PlaceEntity {
         return PlaceEntity(
             serverId = serverId,
             title = title,
             address = address,
-            photoPath = resolveImportedPhotoPath(photoPath, existingPhotoPath, forcePhotoDownload),
+            photoPath = resolveImportedPhotoPath(photoPath, existingPhotoPath),
             serverPhotoPath = photoPath,
             rating = rating,
             comment = comment,
@@ -268,19 +265,18 @@ class SyncRepositoryImpl(
 
     private suspend fun resolveImportedPhotoPath(
         serverPhotoPath: String?,
-        existingPhotoPath: String?,
-        forceDownload: Boolean
+        existingPhotoPath: String?
     ): String? {
         val existingFile = existingPhotoPath
             ?.takeIf { !it.isServerPhotoPath() }
             ?.let(::File)
 
-        if (serverPhotoPath.isNullOrBlank()) {
-            return existingFile?.takeIf { file -> file.exists() }?.absolutePath
+        if (existingFile?.exists() == true) {
+            return existingFile.absolutePath
         }
 
-        if (!forceDownload && existingFile?.exists() == true) {
-            return existingFile.absolutePath
+        if (serverPhotoPath.isNullOrBlank()) {
+            return null
         }
 
         return runCatching {
