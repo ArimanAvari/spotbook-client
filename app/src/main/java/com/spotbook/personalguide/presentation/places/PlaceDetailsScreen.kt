@@ -66,7 +66,8 @@ fun PlaceDetailsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(place.title, style = MaterialTheme.typography.headlineSmall)
-                photoModel(place.photoPath)?.let { model ->
+                val visiblePhotoPath = place.photoPath ?: place.serverPhotoPath
+                photoModel(visiblePhotoPath)?.let { model ->
                     AsyncImage(
                         model = model,
                         contentDescription = "Фото места",
@@ -82,7 +83,7 @@ fun PlaceDetailsScreen(
                 Text("Статус: ${if (place.status == PlaceStatus.VISITED) "Посещено" else "Хочу посетить"}")
                 Text("Комментарий: ${place.comment.ifBlank { "-" }}")
                 Text("Группа: ${groupName ?: "-"}")
-                if (place.photoPath.isNullOrBlank()) {
+                if (visiblePhotoPath.isNullOrBlank()) {
                     Text("Фото: -")
                 }
                 Button(onClick = onEditClick, modifier = Modifier.fillMaxWidth()) {

@@ -12,7 +12,8 @@ fun PlaceDto.toDomain(): PlaceCard {
         serverId = id,
         title = title,
         address = address,
-        photoPath = photoPath,
+        photoPath = null,
+        serverPhotoPath = photoPath,
         rating = rating,
         comment = comment,
         status = status,
@@ -33,4 +34,3 @@ fun GroupDto.toDomain(): Group {
         updatedAt = updatedAt
     )
 }
-

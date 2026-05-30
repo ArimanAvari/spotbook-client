@@ -6,6 +6,7 @@ data class PlaceCard(
     val title: String,
     val address: String,
     val photoPath: String?,
+    val serverPhotoPath: String?,
     val rating: Int,
     val comment: String,
     val status: PlaceStatus,
@@ -14,4 +15,3 @@ data class PlaceCard(
     val createdAt: String,
     val updatedAt: String
 )
-

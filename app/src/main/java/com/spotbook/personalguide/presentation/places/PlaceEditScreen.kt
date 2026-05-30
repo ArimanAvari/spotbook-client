@@ -101,7 +101,7 @@ fun PlaceEditScreen(
                 ) {
                     Text("Выбрать фото")
                 }
-                photoModel(form.photoPath)?.let { model ->
+                photoModel(form.photoPath.ifBlank { form.serverPhotoPath })?.let { model ->
                     AsyncImage(
                         model = model,
                         contentDescription = "Фото места",

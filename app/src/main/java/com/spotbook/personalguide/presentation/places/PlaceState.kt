@@ -17,6 +17,6 @@ data class PlaceFormState(
     val rating: Int = 3,
     val status: PlaceStatus = PlaceStatus.WANT_TO_VISIT,
     val groupId: Long? = null,
-    val photoPath: String = ""
+    val photoPath: String = "",
+    val serverPhotoPath: String = ""
 )
-

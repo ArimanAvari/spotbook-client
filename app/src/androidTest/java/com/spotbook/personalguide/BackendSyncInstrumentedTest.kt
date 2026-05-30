@@ -65,6 +65,7 @@ class BackendSyncInstrumentedTest {
                 title = "Test place",
                 address = "Test address",
                 photoPath = null,
+                serverPhotoPath = null,
                 rating = 5,
                 comment = "Created locally",
                 status = PlaceStatus.WANT_TO_VISIT,

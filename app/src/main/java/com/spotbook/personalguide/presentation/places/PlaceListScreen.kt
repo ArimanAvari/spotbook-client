@@ -98,7 +98,7 @@ private fun PlaceListItem(place: PlaceCard, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            photoModel(place.photoPath)?.let { model ->
+            photoModel(place.photoPath ?: place.serverPhotoPath)?.let { model ->
                 AsyncImage(
                     model = model,
                     contentDescription = "Фото места",

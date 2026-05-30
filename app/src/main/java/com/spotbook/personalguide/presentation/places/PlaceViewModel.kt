@@ -58,7 +58,8 @@ class PlaceViewModel(
                 rating = place.rating,
                 status = place.status,
                 groupId = place.groupId,
-                photoPath = place.photoPath.orEmpty()
+                photoPath = place.photoPath.orEmpty(),
+                serverPhotoPath = place.serverPhotoPath.orEmpty()
             )
         }
     }
@@ -103,6 +104,7 @@ class PlaceViewModel(
                         title = formState.title.trim(),
                         address = formState.address.trim(),
                         photoPath = formState.photoPath.ifBlank { null },
+                        serverPhotoPath = null,
                         rating = formState.rating,
                         comment = formState.comment.trim(),
                         status = formState.status,
@@ -119,6 +121,7 @@ class PlaceViewModel(
                         title = formState.title.trim(),
                         address = formState.address.trim(),
                         photoPath = formState.photoPath.ifBlank { null },
+                        serverPhotoPath = old.serverPhotoPath,
                         rating = formState.rating,
                         comment = formState.comment.trim(),
                         status = formState.status,

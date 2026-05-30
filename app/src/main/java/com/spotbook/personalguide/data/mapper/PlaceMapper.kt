@@ -10,6 +10,7 @@ fun PlaceEntity.toDomain(): PlaceCard {
         title = title,
         address = address,
         photoPath = photoPath,
+        serverPhotoPath = serverPhotoPath,
         rating = rating,
         comment = comment,
         status = status,
@@ -27,6 +28,7 @@ fun PlaceCard.toEntity(): PlaceEntity {
         title = title,
         address = address,
         photoPath = photoPath,
+        serverPhotoPath = serverPhotoPath,
         rating = rating,
         comment = comment,
         status = status,
@@ -36,4 +38,3 @@ fun PlaceCard.toEntity(): PlaceEntity {
         updatedAt = updatedAt
     )
 }
-

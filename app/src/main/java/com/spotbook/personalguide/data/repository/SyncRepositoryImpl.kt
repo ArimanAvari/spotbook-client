@@ -10,7 +10,9 @@ import com.spotbook.personalguide.data.remote.ApiService
 import com.spotbook.personalguide.data.remote.ServerGroupDto
 import com.spotbook.personalguide.data.remote.ServerPlaceDto
 import com.spotbook.personalguide.data.remote.SyncExportRequestDto
+import com.spotbook.personalguide.data.remote.SyncExportResponseDto
 import com.spotbook.personalguide.data.remote.SyncGroupItemDto
+import com.spotbook.personalguide.data.remote.SyncIdMappingDto
 import com.spotbook.personalguide.data.remote.SyncImportResponseDto
 import com.spotbook.personalguide.data.remote.SyncPlaceItemDto
 import com.spotbook.personalguide.domain.model.SyncStatus
@@ -44,32 +46,12 @@ class SyncRepositoryImpl(
         )
 
         uploadLocalPhotos(dirtyPlaces, response.places)
-        replaceImportedData(apiService.importData())
+        finishExportedItems(dirtyGroups, dirtyPlaces, response)
+        mergeImportedData(apiService.importData())
     }
 
     override suspend fun importData() {
         mergeImportedData(apiService.importData())
-    }
-
-    private suspend fun replaceImportedData(data: SyncImportResponseDto) {
-        placeDao.clearPlaces()
-        groupDao.clearGroups()
-
-        val groupLocalIdsByServerId = mutableMapOf<Long, Long>()
-        data.groups.forEach { group ->
-            val localId = groupDao.insertGroup(group.toEntity())
-            groupLocalIdsByServerId[group.serverId] = localId
-        }
-
-        val places = mutableListOf<PlaceEntity>()
-        data.places.forEach { place ->
-            places += place.toEntity(
-                localGroupId = groupLocalIdsByServerId[place.groupServerId],
-                existingPhotoPath = null,
-                forcePhotoDownload = true
-            )
-        }
-        placeDao.insertPlaces(places)
     }
 
     private suspend fun mergeImportedData(data: SyncImportResponseDto) {
@@ -153,7 +135,7 @@ class SyncRepositoryImpl(
             serverId = serverId,
             title = title,
             address = address,
-            photoPath = photoPath.takeIf { it.isServerPhotoPath() },
+            photoPath = serverPhotoPath,
             rating = rating,
             comment = comment,
             status = status,
@@ -180,9 +162,57 @@ class SyncRepositoryImpl(
                 val photoFile = File(photoPath)
                 val serverId = serverIdsByLocalId[place.localId] ?: place.serverId ?: return@forEach
                 if (photoFile.exists() && photoFile.isFile) {
-                    apiService.uploadPlacePhoto(serverId, photoFile)
+                    val uploadedPhoto = apiService.uploadPlacePhoto(serverId, photoFile)
+                    val current = placeDao.getPlaceByLocalId(place.localId) ?: return@forEach
+                    placeDao.updatePlace(
+                        current.copy(
+                            serverId = serverId,
+                            serverPhotoPath = uploadedPhoto.photoPath
+                        )
+                    )
                 }
             }
+    }
+
+    private suspend fun finishExportedItems(
+        dirtyGroups: List<GroupEntity>,
+        dirtyPlaces: List<PlaceEntity>,
+        response: SyncExportResponseDto
+    ) {
+        val groupServerIds = response.groups.toServerIdsByLocalId()
+        val placeServerIds = response.places.toServerIdsByLocalId()
+
+        dirtyGroups.forEach { group ->
+            val current = groupDao.getGroupByLocalId(group.localId) ?: return@forEach
+            if (group.syncStatus == SyncStatus.DELETED) {
+                groupDao.deleteGroup(current)
+            } else {
+                groupDao.updateGroup(
+                    current.copy(
+                        serverId = groupServerIds[group.localId] ?: current.serverId,
+                        syncStatus = SyncStatus.SYNCED
+                    )
+                )
+            }
+        }
+
+        dirtyPlaces.forEach { place ->
+            val current = placeDao.getPlaceByLocalId(place.localId) ?: return@forEach
+            if (place.syncStatus == SyncStatus.DELETED) {
+                placeDao.deletePlace(current)
+            } else {
+                placeDao.updatePlace(
+                    current.copy(
+                        serverId = placeServerIds[place.localId] ?: current.serverId,
+                        syncStatus = SyncStatus.SYNCED
+                    )
+                )
+            }
+        }
+    }
+
+    private fun List<SyncIdMappingDto>.toServerIdsByLocalId(): Map<Long, Long> {
+        return mapNotNull { mapping -> mapping.serverId?.let { mapping.localId to it } }.toMap()
     }
 
     private fun String?.isServerPhotoPath(): Boolean {
@@ -225,6 +255,7 @@ class SyncRepositoryImpl(
             title = title,
             address = address,
             photoPath = resolveImportedPhotoPath(photoPath, existingPhotoPath, forcePhotoDownload),
+            serverPhotoPath = photoPath,
             rating = rating,
             comment = comment,
             status = status,
@@ -240,11 +271,14 @@ class SyncRepositoryImpl(
         existingPhotoPath: String?,
         forceDownload: Boolean
     ): String? {
-        if (serverPhotoPath.isNullOrBlank()) return null
-
         val existingFile = existingPhotoPath
             ?.takeIf { !it.isServerPhotoPath() }
             ?.let(::File)
+
+        if (serverPhotoPath.isNullOrBlank()) {
+            return existingFile?.takeIf { file -> file.exists() }?.absolutePath
+        }
+
         if (!forceDownload && existingFile?.exists() == true) {
             return existingFile.absolutePath
         }
@@ -253,7 +287,7 @@ class SyncRepositoryImpl(
             val bytes = apiService.downloadPhoto(serverPhotoPath)
             LocalPhotoStorage.saveServerPhoto(context, serverPhotoPath, bytes)
         }.getOrElse {
-            existingFile?.takeIf { file -> file.exists() }?.absolutePath ?: serverPhotoPath
+            existingFile?.takeIf { file -> file.exists() }?.absolutePath
         }
     }
 }

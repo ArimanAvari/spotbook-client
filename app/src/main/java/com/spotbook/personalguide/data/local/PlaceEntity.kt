@@ -24,6 +24,9 @@ data class PlaceEntity(
     @ColumnInfo(name = "photo_path")
     val photoPath: String?,
 
+    @ColumnInfo(name = "server_photo_path")
+    val serverPhotoPath: String?,
+
     @ColumnInfo(name = "rating")
     val rating: Int,
 
@@ -45,4 +48,3 @@ data class PlaceEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: String
 )
-
