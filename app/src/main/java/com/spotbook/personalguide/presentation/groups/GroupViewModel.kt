@@ -14,6 +14,8 @@ import com.spotbook.personalguide.domain.model.Group
 import com.spotbook.personalguide.domain.model.PlaceCard
 import com.spotbook.personalguide.domain.model.SyncStatus
 import java.time.Instant
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -21,6 +23,8 @@ data class GroupState(
     val groups: List<Group> = emptyList(),
     val places: List<PlaceCard> = emptyList(),
     val newGroupName: String = "",
+    val searchQuery: String = "",
+    val appliedSearchQuery: String = "",
     val error: String? = null
 )
 
@@ -28,6 +32,8 @@ class GroupViewModel(
     private val groupDao: GroupDao,
     private val placeDao: PlaceDao
 ) : ViewModel() {
+    private var searchJob: Job? = null
+
     var state by mutableStateOf(GroupState())
         private set
 
@@ -46,24 +52,34 @@ class GroupViewModel(
         state = state.copy(newGroupName = value, error = null)
     }
 
+    fun onSearchQueryChange(value: String) {
+        state = state.copy(searchQuery = value)
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(400)
+            state = state.copy(appliedSearchQuery = value.trim())
+        }
+    }
+
     fun createGroup() {
         if (state.newGroupName.isBlank()) {
             state = state.copy(error = "Введите название группы")
             return
         }
 
+        val groupName = state.newGroupName.trim()
+        state = state.copy(newGroupName = "")
         viewModelScope.launch {
             val now = Instant.now().toString()
             groupDao.insertGroup(
                 GroupEntity(
                     serverId = null,
-                    name = state.newGroupName.trim(),
+                    name = groupName,
                     syncStatus = SyncStatus.NOT_SYNCED,
                     createdAt = now,
                     updatedAt = now
                 )
             )
-            state = state.copy(newGroupName = "")
         }
     }
 
@@ -92,4 +108,3 @@ class GroupViewModel(
         }
     }
 }
-
