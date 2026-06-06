@@ -7,6 +7,8 @@ import com.spotbook.personalguide.domain.model.PlaceStatus
 data class PlaceState(
     val places: List<PlaceCard> = emptyList(),
     val groups: List<Group> = emptyList(),
+    val searchQuery: String = "",
+    val appliedSearchQuery: String = "",
     val error: String? = null
 )
 

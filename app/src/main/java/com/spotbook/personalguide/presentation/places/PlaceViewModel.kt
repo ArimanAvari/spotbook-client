@@ -13,6 +13,8 @@ import com.spotbook.personalguide.data.mapper.toDomain
 import com.spotbook.personalguide.domain.model.PlaceStatus
 import com.spotbook.personalguide.domain.model.SyncStatus
 import java.time.Instant
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -21,6 +23,7 @@ class PlaceViewModel(
     private val groupDao: GroupDao
 ) : ViewModel() {
     private var activeEditId: Long? = null
+    private var searchJob: Job? = null
 
     var state by mutableStateOf(PlaceState())
         private set
@@ -31,7 +34,7 @@ class PlaceViewModel(
     init {
         viewModelScope.launch {
             combine(placeDao.observePlaces(), groupDao.observeGroups()) { places, groups ->
-                PlaceState(
+                state.copy(
                     places = places.map { it.toDomain() },
                     groups = groups.map { it.toDomain() }
                 )
@@ -90,6 +93,15 @@ class PlaceViewModel(
 
     fun onGroupChange(value: Long?) {
         formState = formState.copy(groupId = value)
+    }
+
+    fun onSearchQueryChange(value: String) {
+        state = state.copy(searchQuery = value)
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(400)
+            state = state.copy(appliedSearchQuery = value.trim())
+        }
     }
 
     fun savePlace(localId: Long?, onSaved: () -> Unit) {
