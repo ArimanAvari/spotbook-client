@@ -169,7 +169,7 @@ class PlaceViewModel(
         val message = when {
             formState.title.isBlank() -> "Введите название"
             formState.address.isBlank() -> "Введите адрес"
-            formState.rating !in 1..5 -> "Оценка должна быть от 1 до 5"
+            formState.rating !in 1..10 -> "Оценка должна быть от 1 до 10"
             else -> null
         }
         state = state.copy(error = message)
