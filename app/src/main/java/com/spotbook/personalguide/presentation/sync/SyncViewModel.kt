@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 data class SyncState(
     val statusText: String = "Синхронизация ещё не запускалась",
     val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
     val error: String? = null
 )
 
@@ -28,11 +29,19 @@ class SyncViewModel(
 
     fun exportData() {
         viewModelScope.launch {
-            state = state.copy(isLoading = true, error = null, statusText = "Экспорт выполняется")
+            state = state.copy(
+                isLoading = true,
+                isSuccess = false,
+                error = null,
+                statusText = "Экспорт выполняется"
+            )
             runCatching {
                 exportDataUseCase()
             }.onSuccess {
-                state = SyncState(statusText = "Экспорт завершён, локальная база обновлена")
+                state = SyncState(
+                    statusText = "Экспорт завершён, локальная база обновлена",
+                    isSuccess = true
+                )
             }.onFailure { error ->
                 state = SyncState(
                     statusText = "Экспорт не выполнен",
@@ -44,11 +53,19 @@ class SyncViewModel(
 
     fun importData() {
         viewModelScope.launch {
-            state = state.copy(isLoading = true, error = null, statusText = "Импорт выполняется")
+            state = state.copy(
+                isLoading = true,
+                isSuccess = false,
+                error = null,
+                statusText = "Импорт выполняется"
+            )
             runCatching {
                 importDataUseCase()
             }.onSuccess {
-                state = SyncState(statusText = "Импорт завершён, данные сохранены в Room")
+                state = SyncState(
+                    statusText = "Импорт завершён, данные сохранены в Room",
+                    isSuccess = true
+                )
             }.onFailure { error ->
                 state = SyncState(
                     statusText = "Импорт не выполнен",
@@ -67,4 +84,3 @@ class SyncViewModel(
         }
     }
 }
-

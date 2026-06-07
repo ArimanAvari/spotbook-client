@@ -25,6 +25,8 @@ data class GroupState(
     val newGroupName: String = "",
     val searchQuery: String = "",
     val appliedSearchQuery: String = "",
+    val placeSearchQuery: String = "",
+    val appliedPlaceSearchQuery: String = "",
     val error: String? = null
 )
 
@@ -33,6 +35,7 @@ class GroupViewModel(
     private val placeDao: PlaceDao
 ) : ViewModel() {
     private var searchJob: Job? = null
+    private var placeSearchJob: Job? = null
 
     var state by mutableStateOf(GroupState())
         private set
@@ -58,6 +61,15 @@ class GroupViewModel(
         searchJob = viewModelScope.launch {
             delay(400)
             state = state.copy(appliedSearchQuery = value.trim())
+        }
+    }
+
+    fun onPlaceSearchQueryChange(value: String) {
+        state = state.copy(placeSearchQuery = value)
+        placeSearchJob?.cancel()
+        placeSearchJob = viewModelScope.launch {
+            delay(400)
+            state = state.copy(appliedPlaceSearchQuery = value.trim())
         }
     }
 

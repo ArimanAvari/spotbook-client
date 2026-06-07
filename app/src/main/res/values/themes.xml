@@ -1,4 +1,10 @@
 <resources>
-    <style name="Theme.SpotBook" parent="android:style/Theme.Material.Light.NoActionBar" />
+    <style name="Theme.SpotBook" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">@color/ic_launcher_background</item>
+        <item name="android:windowBackground">@color/spotbook_background</item>
+        <item name="android:navigationBarColor">@color/spotbook_background</item>
+        <item name="android:statusBarColor">@color/spotbook_background</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>
-

@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,18 +13,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,11 +73,35 @@ fun PlaceEditScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(title) },
-                navigationIcon = { TextButton(onClick = onBackClick) { Text("Назад") } }
+                title = {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                actions = { TextButton(onClick = onBackClick) { Text("Назад") } },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
+        },
+        bottomBar = {
+            Surface(
+                tonalElevation = 4.dp,
+                shadowElevation = 8.dp
+            ) {
+                Button(
+                    onClick = { viewModel.savePlace(placeId, onSaved) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Text("Сохранить")
+                }
+            }
         }
     ) { padding ->
         AdaptivePane(
@@ -82,53 +115,50 @@ fun PlaceEditScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                OutlinedTextField(
-                    value = form.title,
-                    onValueChange = viewModel::onTitleChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Название") },
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = form.address,
-                    onValueChange = viewModel::onAddressChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Адрес") },
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = form.comment,
-                    onValueChange = viewModel::onCommentChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Комментарий") }
-                )
-                OutlinedButton(
-                    onClick = { photoPicker.launch("image/*") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Выбрать фото")
-                }
-                photoModel(form.photoPath.ifBlank { form.serverPhotoPath })?.let { model ->
-                    AsyncImage(
-                        model = model,
-                        contentDescription = "Фото места",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f),
-                        contentScale = ContentScale.Crop,
-                        alignment = Alignment.Center
+                FormSection(title = "Основная информация") {
+                    OutlinedTextField(
+                        value = form.title,
+                        onValueChange = viewModel::onTitleChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Название") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = form.address,
+                        onValueChange = viewModel::onAddressChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Адрес") },
+                        singleLine = true
                     )
                 }
 
-                RatingDropdown(
-                    rating = form.rating,
-                    onRatingChange = viewModel::onRatingChange
-                )
+                FormSection(title = "Фотография") {
+                    OutlinedButton(
+                        onClick = { photoPicker.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Выбрать фото")
+                    }
+                    photoModel(form.photoPath.ifBlank { form.serverPhotoPath })?.let { model ->
+                        AsyncImage(
+                            model = model,
+                            contentDescription = "Фото места",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f),
+                            contentScale = ContentScale.Crop,
+                            alignment = Alignment.Center
+                        )
+                    }
+                }
 
-                Text("Статус")
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FormSection(title = "Оценка и статус") {
+                    RatingDropdown(
+                        rating = form.rating,
+                        onRatingChange = viewModel::onRatingChange
+                    )
                     StatusButton(
                         text = "Хочу посетить",
                         selected = form.status == PlaceStatus.WANT_TO_VISIT,
@@ -145,32 +175,74 @@ fun PlaceEditScreen(
                     }
                 }
 
-                Text("Группа")
-                StatusButton(
-                    text = "Без группы",
-                    selected = form.groupId == null,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    viewModel.onGroupChange(null)
+                FormSection(title = "Комментарий") {
+                    OutlinedTextField(
+                        value = form.comment,
+                        onValueChange = viewModel::onCommentChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Комментарий") },
+                        minLines = 3
+                    )
                 }
-                viewModel.state.groups.forEach { group ->
+
+                FormSection(title = "Группа") {
                     StatusButton(
-                        text = group.name,
-                        selected = form.groupId == group.localId,
+                        text = "Без группы",
+                        selected = form.groupId == null,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        viewModel.onGroupChange(group.localId)
+                        viewModel.onGroupChange(null)
+                    }
+                    if (viewModel.state.groups.isNotEmpty()) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(208.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(viewModel.state.groups, key = { it.localId }) { group ->
+                                StatusButton(
+                                    text = group.name,
+                                    selected = form.groupId == group.localId,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    viewModel.onGroupChange(group.localId)
+                                }
+                            }
+                        }
                     }
                 }
 
-                viewModel.state.error?.let { Text(it) }
-                Button(
-                    onClick = { viewModel.savePlace(placeId, onSaved) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Сохранить")
+                viewModel.state.error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FormSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            content()
         }
     }
 }
